@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:ui' as ui;
 
-
 import 'package:dash_chat_2/dash_chat_2.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -21,8 +20,6 @@ import 'basewallpaper.dart';
 import 'camera.dart';
 import 'newappbar.dart';
 
-
-
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key});
 
@@ -38,26 +35,19 @@ class _MyHomePageState extends State<MyHomePage> {
   FocusNode focusNode = FocusNode();
   bool isTextInputFocused = false;
 
-  late Uint8List? selected=null;
-  late String? path=null;
+  late Uint8List? selected = null;
+  late String? path = null;
 
- // final gemini = Gemini.instance;
+  // final gemini = Gemini.instance;
 
   ChatUser myself = ChatUser(id: "1", firstName: "User");
   ChatUser bot = ChatUser(id: "2", firstName: "FRIDAY");
-
-
-
 
   List<ChatMessage> allMessages = <ChatMessage>[];
 
   List<ChatUser> typing = [];
 
-
-
-  final header={
-  'Content-Type': 'application/json'
-  };
+  final header = {'Content-Type': 'application/json'};
 
   //
   // curl \
@@ -66,9 +56,8 @@ class _MyHomePageState extends State<MyHomePage> {
   // -X POST https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=YOUR_API_KEY
   //
 
-
-  Future<void> navigateToCameraScreen() async{
-    await  Get.to(() => const CameraCaptureScreen());
+  Future<void> navigateToCameraScreen() async {
+    await Get.to(() => const CameraCaptureScreen());
 
     selected = pi.cameraImagebytes;
     path = pi.path!.value;
@@ -76,88 +65,72 @@ class _MyHomePageState extends State<MyHomePage> {
     print("$path");
     print("$selected");
 
-    setState(() {
-
-    });
+    setState(() {});
     return Future.value(null);
-
   }
 
-
-
-
   Future<void> getdata(ChatMessage m, BuildContext dialogcontext) async {
-
-
-
-
-
-
-
     typing.add(bot);
     allMessages.insert(0, m);
     setState(() {});
 
+    //  print("${Api.api_key}");
 
-  //  print("${Api.api_key}");
-
-
-   String? finalresult;
+    String? finalresult;
 
     try {
+      var data =
+          // (selected!=null) ?
+          //  {"contents": [{ "parts": [{ "inlineData": {"mimeType": "selected!", "data":selected!}},{"text": m.text}]}]}:
 
-
-
-      var data=
-      // (selected!=null) ?
-      //  {"contents": [{ "parts": [{ "inlineData": {"mimeType": "selected!", "data":selected!}},{"text": m.text}]}]}:
-
-    {"contents": [{"parts": [{"text": m.text}]}]};
-
-
-
+          {
+        "contents": [
+          {
+            "parts": [
+              {"text": m.text}
+            ]
+          }
+        ]
+      };
 
       if (selected != null) {
-
         //
         //
         // var response =
         //    await gemini.textAndImage(text: m.text, images: [selected!]);
-
 
         Map<String, dynamic> requestData = {
           'contents': [
             {
               'parts': [
                 {'text': m.text},
-                {'inlineData': {'mimeType': 'image/jpeg', 'data': base64Encode(selected!)}}
+                {
+                  'inlineData': {
+                    'mimeType': 'image/jpeg',
+                    'data': base64Encode(selected!)
+                  }
+                }
               ]
             }
           ]
         };
 
-
-
-        await http.post(
-            Uri.parse(Api.our_url2.value),
-            headers: <String, String>{
-              'Content-Type': 'application/json',
-            },
-            body: jsonEncode(requestData)
-        ).then((value) {
+        await http
+            .post(Uri.parse(Api.our_url2.value),
+                headers: <String, String>{
+                  'Content-Type': 'application/json',
+                },
+                body: jsonEncode(requestData))
+            .then((value) {
           if (value.statusCode == 200) {
             var result = jsonDecode(value.body);
 
             finalresult =
-            result["candidates"][0]["content"]["parts"][0]["text"];
-
-          }
-          else {
+                result["candidates"][0]["content"]["parts"][0]["text"];
+          } else {
             typing.remove(bot);
-            finalresult="please enter the correct API key buddy";
-            setState(() {
-
-            });
+            finalresult = "please enter the correct API key buddy";
+            setState(() {});
             if (kDebugMode) {
               print("error");
             }
@@ -167,37 +140,24 @@ class _MyHomePageState extends State<MyHomePage> {
             print("$e");
           }
         });
-
-
-
-
-
-      }
-
-
-
-      else {
+      } else {
         if (kDebugMode) {
           print(Api.our_url1.value);
         }
-        await http.post(
-            Uri.parse(Api.our_url1.value),
-            headers: header,
-            body: jsonEncode(data)
-        ).then((value) {
+        await http
+            .post(Uri.parse(Api.our_url1.value),
+                headers: header, body: jsonEncode(data))
+            .then((value) {
           if (value.statusCode == 200) {
             var result = jsonDecode(value.body);
 
             finalresult =
-            result["candidates"][0]["content"]["parts"][0]["text"];
-
-          }
-          else {
+                result["candidates"][0]["content"]["parts"][0]["text"];
+          } else {
             typing.remove(bot);
-            finalresult="please enter the correct API key buddy or unable to analyse picture";
-            setState(() {
-
-            });
+            finalresult =
+                "please enter the correct API key buddy or unable to analyse picture";
+            setState(() {});
             if (kDebugMode) {
               print("error");
             }
@@ -207,13 +167,11 @@ class _MyHomePageState extends State<MyHomePage> {
             print("$e");
           }
         });
-
-
       }
 
-
       ChatMessage chatMsg = ChatMessage(
-        text: finalresult ?? "", // Use null check operator to handle null result
+        text:
+            finalresult ?? "", // Use null check operator to handle null result
         user: bot,
         createdAt: DateTime.now(),
         customProperties: {
@@ -221,15 +179,11 @@ class _MyHomePageState extends State<MyHomePage> {
         },
       );
 
-
-
       Future.microtask(() {
         allMessages.insert(0, chatMsg);
         typing.remove(bot);
         setState(() {});
       });
-
-
     } catch (e) {
       if (kDebugMode) {
         print("error");
@@ -256,7 +210,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
-     ui.Size size = MediaQuery.of(context).size;
+    ui.Size size = MediaQuery.of(context).size;
 
     final dialogcontext = context;
 
@@ -265,7 +219,6 @@ class _MyHomePageState extends State<MyHomePage> {
         isTextInputFocused = focusNode.hasFocus;
       });
     });
-
 
     // ChatMessage message=ChatMessage(
     //     user: myself,
@@ -338,15 +291,13 @@ class _MyHomePageState extends State<MyHomePage> {
                                 navigateToCameraScreen();
                               }
 
-                              if (wts == false){
+                              if (wts == false) {
+                                Uint8List? imageBytes = await pi.getImage();
+                                selected = imageBytes;
 
-                                  Uint8List? imageBytes = await pi.getImage();
-                                  selected=imageBytes;
-
-                                  path= pi.path!.value;
-                                  print("path is                $path");
-                                  setState(() {
-                                  });
+                                path = pi.path!.value;
+                                print("path is                $path");
+                                setState(() {});
                               }
                             },
                             icon: Container(
@@ -378,13 +329,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                   color: Colors.white,
                                 )));
                       },
-
-
-
                       focusNode: focusNode,
-
-
-
                       inputDecoration: const InputDecoration(
                         hintText: "Message to Friday",
                         border: OutlineInputBorder(
@@ -392,45 +337,37 @@ class _MyHomePageState extends State<MyHomePage> {
                         ),
                         contentPadding: EdgeInsets.all(15),
                       ),
-
                       inputMaxLines: 30,
                       inputToolbarPadding: const EdgeInsets.only(
                         left: 12,
                         right: 12,
                         bottom: 12,
-                        top:12,
+                        top: 12,
                       ),
                       inputToolbarStyle: const BoxDecoration()),
 
-
-
-
                   //all about messages here
 
-
                   messageOptions: MessageOptions(
-
-
-
 //1
                     avatarBuilder: (user, onPressed, onLongPressed) {
                       // Replace this with your custom avatar widget
                       return GestureDetector(
-                        onTap: (){},
-                        onLongPress: (){},
+                        onTap: () {},
+                        onLongPress: () {},
                         child: Container(
-                          margin: const EdgeInsets.only(right: 5,left: 2),
+                          margin: const EdgeInsets.only(right: 5, left: 2),
                           width: 35,
                           height: 35,
                           decoration: const BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: Colors.blue,
-                            image: DecorationImage(image: AssetImage("assists/Screenshot 2024-02-11 020336.png"),fit: BoxFit.fill)// Customize the avatar color as needed
-                          ),
-                     
-                          
-
-
+                              shape: BoxShape.circle,
+                              color: Colors.blue,
+                              image: DecorationImage(
+                                  image: AssetImage(
+                                      "assists/Screenshot 2024-02-11 020336.png"),
+                                  fit: BoxFit
+                                      .fill) // Customize the avatar color as needed
+                              ),
                         ),
                       );
                     },
@@ -438,7 +375,6 @@ class _MyHomePageState extends State<MyHomePage> {
 //2
 
                     onLongPressMessage: (ChatMessage message) {
-
                       Clipboard.setData(ClipboardData(text: message.text));
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
@@ -457,36 +393,32 @@ class _MyHomePageState extends State<MyHomePage> {
 //3
                     messageTextBuilder:
                         (message, previousMessage, nextMessage) {
-                      return
-                            Text(
-                              message.text,
-                              style: const TextStyle(
-                                color: Colors.black,
-                                fontSize: 14.7,
-                              )
-                          );
+                      return Text(message.text,
+                          style: const TextStyle(
+                            color: Colors.black,
+                            fontSize: 14.7,
+                          ));
                     },
-
 
 //4
-                    userNameBuilder: (bot){
+                    userNameBuilder: (bot) {
                       return Container(
-                          padding:const EdgeInsets.only(bottom: 5,left: 8),
-                           child: Text("${bot.firstName}",style: const TextStyle(
-                           color: Colors.grey,
-                             fontSize: 11
-                           ),));
+                          padding: const EdgeInsets.only(bottom: 5, left: 8),
+                          child: Text(
+                            "${bot.firstName}",
+                            style: const TextStyle(
+                                color: Colors.grey, fontSize: 11),
+                          ));
                     },
 
-
 //5
-                    messageDecorationBuilder: (message, previousMessage, nextMessage) {
-
+                    messageDecorationBuilder:
+                        (message, previousMessage, nextMessage) {
                       // Check if the message is sent by the current user
                       bool isCurrentUserMessage = message.user.id == myself.id;
 
                       // Define decoration for current user's message
-                      BoxDecoration currentUserDecoration =   BoxDecoration(
+                      BoxDecoration currentUserDecoration = BoxDecoration(
                         borderRadius: const BorderRadius.only(
                           topLeft: Radius.circular(20),
                           topRight: Radius.circular(20),
@@ -495,10 +427,9 @@ class _MyHomePageState extends State<MyHomePage> {
 
                         boxShadow: const [
                           BoxShadow(
-                            color: Colors.black12,
+                              color: Colors.black12,
                               offset: Offset(0.1, 0.2),
-                            blurRadius: 1
-                          )
+                              blurRadius: 1)
                         ],
 
                         color: Colors.grey.shade100,
@@ -506,72 +437,48 @@ class _MyHomePageState extends State<MyHomePage> {
                       );
 
                       // Define decoration for other users' messages
-                      BoxDecoration otherUserDecoration =  BoxDecoration(
+                      BoxDecoration otherUserDecoration = BoxDecoration(
                         borderRadius: const BorderRadius.only(
                           topLeft: Radius.circular(20),
                           topRight: Radius.circular(20),
                           bottomRight: Radius.circular(20),
                         ),
 
-                        boxShadow:  const [
+                        boxShadow: const [
                           BoxShadow(
                               color: Colors.black12,
                               offset: Offset(0.1, 0.2),
-                              blurRadius: 1
-                          )
+                              blurRadius: 1)
                         ],
 
-
-                        color: Colors.grey.shade100, // Change this to the desired color for other users
+                        color: Colors.grey
+                            .shade100, // Change this to the desired color for other users
                       );
 
                       // Return the appropriate decoration based on the sender of the message
-                      return isCurrentUserMessage ? currentUserDecoration : otherUserDecoration;
+                      return isCurrentUserMessage
+                          ? currentUserDecoration
+                          : otherUserDecoration;
                     },
 
-
-    //6
-
-
-
-                      messageMediaBuilder: (message, previousMessage, nextMessage) {
-                        if (message.medias != null) {
-                          return Image.memory(
-                            selected!,
-                            width: 200, // Arrdjust the width as needed
-                            height: 200, // Adjust the height as needed
-                            fit: BoxFit.cover, // Adjust the fit as needed
-                          );
-                        } else {
-                          // Return a placeholder or empty widget if there's no image
-                          return SizedBox.shrink();
-                        }
-                      }
-
-
-
+                    //6
                   ),
-
 
                   typingUsers: typing,
                   currentUser: myself,
 
-
                   onSend: (ChatMessage m) {
-
                     if (selected != null) {
-
-
                       ChatMedia media = ChatMedia(
-                        url: "$path", // Set this to the URL of the image if available, otherwise leave it empty
-                        fileName: "image.jpg", // Set the file name of the image
-                        type: MediaType.image,
-                        customProperties: {
-                        }
-                        // You can add custom properties if needed
-                        // isUploading: true, // Indicate that the image is currently being uploaded
-                      );
-
+                          url:
+                              "$path", // Set this to the URL of the image if available, otherwise leave it empty
+                          fileName:
+                              "image.jpg", // Set the file name of the image
+                          type: MediaType.image,
+                          customProperties: {}
+                          // You can add custom properties if needed
+                          // isUploading: true, // Indicate that the image is currently being uploaded
+                          );
 
                       ChatMessage myMessage = ChatMessage(
                         user: myself,
@@ -580,21 +487,14 @@ class _MyHomePageState extends State<MyHomePage> {
                         medias: [media],
                       );
                       getdata(myMessage, dialogcontext);
-                      selected=null;
-                      setState(() {
-
-                      });
+                      selected = null;
+                      setState(() {});
                     } else {
                       getdata(m, dialogcontext);
                     }
                   },
 
-
-
-                  
                   messages: allMessages,
-                  
-                  
                 ),
                 if (selected != null)
                   Positioned(
@@ -648,5 +548,3 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 }
-
-
